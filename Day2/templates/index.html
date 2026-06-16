@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A premium BigQuery Release Notes dashboard with custom Tweet generation tools for developer advocacy and cloud updates.">
+    <title>BigQuery Release Notes Monitor</title>
+    <!-- Google Fonts: Outfit and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons (via CDN for modern developer icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- CSS File -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="glass-bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i data-lucide="database" class="glow-icon"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery <span>Release Notes</span></h1>
+                    <p class="subtitle">Real-time Cloud Intelligence Dashboard</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="sync-status">
+                    <span class="status-indicator online"></span>
+                    <span id="sync-text">Status: Loaded</span>
+                    <span id="last-updated" class="time-stamp">Last sync: --</span>
+                </div>
+                <button id="refresh-btn" class="btn btn-primary" title="Fetch latest updates from Google Cloud RSS feed">
+                    <i data-lucide="refresh-cw" id="refresh-icon"></i>
+                    <span>Refresh Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="app-layout">
+            <!-- Sidebar -->
+            <aside class="app-sidebar">
+                <div class="sidebar-section search-filter-box">
+                    <h3><i data-lucide="sliders-horizontal"></i> Filters & Search</h3>
+                    
+                    <div class="form-group">
+                        <label for="search-input">Search Keywords</label>
+                        <div class="search-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="search-input" placeholder="Gemini, pricing, IAM..." autocomplete="off">
+                            <button id="clear-search-btn" class="clear-btn" style="display: none;">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Update Type</label>
+                        <div class="filter-pills" id="type-filter-group">
+                            <button class="pill active" data-type="all">All Updates</button>
+                            <button class="pill" data-type="feature"><span class="dot feat"></span>Features</button>
+                            <button class="pill" data-type="change"><span class="dot chng"></span>Changes</button>
+                            <button class="pill" data-type="issue"><span class="dot iss"></span>Issues</button>
+                            <button class="pill" data-type="deprecation"><span class="dot dep"></span>Deprecations</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sort-select">Sort Chronology</label>
+                        <div class="select-wrapper">
+                            <i data-lucide="sort-desc" class="select-icon"></i>
+                            <select id="sort-select">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Dashboard -->
+                <div class="sidebar-section metrics-box">
+                    <h3><i data-lucide="pie-chart"></i> Feed Analytics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-val" id="count-total">0</span>
+                            <span class="metric-label">Total Updates</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-val val-feature" id="count-feature">0</span>
+                            <span class="metric-label">Features</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-val val-change" id="count-change">0</span>
+                            <span class="metric-label">Changes</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-val val-issue" id="count-issue">0</span>
+                            <span class="metric-label">Issues / Depr.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-footer">
+                    <p>Designed for Cloud Engineers & Developer Advocates.</p>
+                    <a href="https://docs.cloud.google.com/bigquery/docs/release-notes" target="_blank" class="source-link">
+                        Official Release Notes <i data-lucide="external-link"></i>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Feed Section -->
+            <main class="feed-container">
+                <!-- Loader State -->
+                <div id="feed-loader" class="state-container">
+                    <div class="spinner-large"></div>
+                    <h2>Fetching Release Notes...</h2>
+                    <p>Contacting Google Cloud XML feed endpoints</p>
+                </div>
+
+                <!-- Empty State -->
+                <div id="feed-empty" class="state-container" style="display: none;">
+                    <i data-lucide="search-code" class="empty-icon"></i>
+                    <h2>No Matching Updates</h2>
+                    <p>Try resetting filters or adjusting search terms</p>
+                    <button id="reset-filters-btn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+
+                <!-- Error State -->
+                <div id="feed-error" class="state-container" style="display: none;">
+                    <i data-lucide="alert-triangle" class="error-icon"></i>
+                    <h2>Synchronization Failed</h2>
+                    <p id="error-message">Could not retrieve or parse the RSS feed.</p>
+                    <button id="retry-btn" class="btn btn-secondary">Retry Fetch</button>
+                </div>
+
+                <!-- Release Feed list -->
+                <div id="release-feed" class="release-feed-list" style="display: none;">
+                    <!-- Javascript will populate cards here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom Tweet Composer Modal -->
+    <div id="tweet-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-area">
+                    <i data-lucide="twitter" class="twitter-blue-icon"></i>
+                    <h2>Generate Update Tweet</h2>
+                </div>
+                <button id="close-modal-btn" class="modal-close-btn" title="Close Modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="composer-layout">
+                    <!-- Left: Editor & Character Count -->
+                    <div class="composer-main">
+                        <label for="tweet-textarea" class="modal-label">Compose Tweet</label>
+                        <div class="textarea-container">
+                            <textarea id="tweet-textarea" rows="8" placeholder="What's happening in BigQuery?"></textarea>
+                            
+                            <div class="textarea-footer">
+                                <div class="char-counter">
+                                    <div class="progress-ring-container">
+                                        <svg class="progress-ring" width="28" height="28">
+                                            <circle class="progress-ring__circle-bg" stroke="#1f2937" stroke-width="3" fill="transparent" r="11" cx="14" cy="14"/>
+                                            <circle class="progress-ring__circle" stroke="#1d9bf0" stroke-width="3" fill="transparent" r="11" cx="14" cy="14"/>
+                                        </svg>
+                                        <span id="char-number">0</span>
+                                    </div>
+                                    <span id="char-warning-text" class="warning-text"></span>
+                                </div>
+                                <div class="tweet-status-indicator" id="tweet-status-indicator"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Tweeting Options / Templates -->
+                    <div class="composer-sidebar">
+                        <h3 class="sidebar-title"><i data-lucide="sparkles"></i> AI Tweet Templates</h3>
+                        <p class="sidebar-desc">Select a style for your BigQuery update tweet:</p>
+                        
+                        <div class="template-list">
+                            <button class="template-btn active" data-style="standard">
+                                <span class="template-icon">📢</span>
+                                <div class="template-info">
+                                    <strong>Professional</strong>
+                                    <span>Informative & clear</span>
+                                </div>
+                            </button>
+                            <button class="template-btn" data-style="punchy">
+                                <span class="template-icon">⚡</span>
+                                <div class="template-info">
+                                    <strong>Punchy & Short</strong>
+                                    <span>Focused on the headline</span>
+                                </div>
+                            </button>
+                            <button class="template-btn" data-style="emoji">
+                                <span class="template-icon">🔥</span>
+                                <div class="template-info">
+                                    <strong>Dev-Rel Style</strong>
+                                    <span>Engaging with emojis</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        <div class="tip-box">
+                            <i data-lucide="lightbulb" class="tip-icon"></i>
+                            <p>Includes official source URL automatically to link back to docs.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="cancel-modal-btn" class="btn btn-secondary">Discard</button>
+                <button id="send-tweet-btn" class="btn btn-tweet">
+                    <i data-lucide="send"></i>
+                    <span>Open in X (Twitter)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2026 BigQuery Release Notes Monitor. Powered by Flask & vanilla JS. Designed with premium aesthetics.</p>
+    </footer>
+
+    <!-- JS File -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

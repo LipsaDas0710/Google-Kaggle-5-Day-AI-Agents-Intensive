@@ -20,6 +20,10 @@ A frontend application generated using Google AI Studio featuring interactive sn
 
 ![Day 1 Screenshot](Day1/snowflakes-and-balloons/screenshots/main-ui.jpg)
 
+## Day 2 – BigQuery Release Notes Monitor & Twitter Agent
+
+An interactive web application built with Python Flask and plain HTML/CSS/JS that monitors Google's BigQuery release notes XML feed in real-time. It splits feed entries into separate, filterable update cards and generates update tweets using customizable styles (Professional, Punchy, Dev-Rel) with a visual character limit progress ring.
+
 ## Repository Structure
 
 day-1/
