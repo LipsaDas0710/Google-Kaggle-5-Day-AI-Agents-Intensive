@@ -14,6 +14,12 @@ Over five days, I will explore AI agent development, prompt engineering, and app
 - [ ] Day 4
 - [ ] Day 5
 
+## Day 1 – Snowflakes and Balloons
+
+A frontend application generated using Google AI Studio featuring interactive snowflake and balloon animations.
+
+![Day 1 Screenshot](Day1/screenshots/main-ui.png)
+
 ## Repository Structure
 
 day-1/
