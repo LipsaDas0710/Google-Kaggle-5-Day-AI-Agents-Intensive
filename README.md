@@ -18,7 +18,7 @@ Over five days, I will explore AI agent development, prompt engineering, and app
 
 A frontend application generated using Google AI Studio featuring interactive snowflake and balloon animations.
 
-![Day 1 Screenshot](Day1/screenshots/main-ui.png)
+![Day 1 Screenshot](Day1/snowflakes-and-ballons/screenshots/main-ui.png)
 
 ## Repository Structure
 
